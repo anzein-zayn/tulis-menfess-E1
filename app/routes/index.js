@@ -37,25 +37,6 @@ router.post("/send", async (req, res) => {
   }
 });
 
-router.post('/like/:id', async (req, res) => {
-    const { id } = req.params;
-    
-    try {
-        // Update likes +1 di database
-        await db.query(
-            'UPDATE menfess SET likes = likes + 1 WHERE id = ?', 
-            [id]
-        );
-        
-        console.log(`✅ Like berhasil ditambahkan untuk menfess ID: ${id}`);
-        
-        // Redirect kembali ke halaman utama
-        res.redirect('/');
-    } catch (error) {
-        console.error('❌ Error updating like:', error);
-        res.status(500).send('Error updating like');
-    }
-});
 // TODO: Tambahkan Route LIKE di sini
 // Clue: router.post('/like/:id', async (req, res) => { ... })
 
@@ -63,3 +44,22 @@ router.post('/like/:id', async (req, res) => {
 // Clue: Mirip like, tapi yang ditambah kolom dislikes
 
 module.exports = router;
+router.post('/dislike/:id', async (req, res) => {
+    const { id } = req.params;
+    
+    try {
+        // Update dislikes +1 di database
+        await db.query(
+            'UPDATE menfess SET dislikes = dislikes + 1 WHERE id = ?', 
+            [id]
+        );
+        
+        console.log(`✅ Dislike berhasil ditambahkan untuk menfess ID: ${id}`);
+        
+        // Redirect kembali ke halaman utama
+        res.redirect('/');
+    } catch (error) {
+        console.error('❌ Error updating dislike:', error);
+        res.status(500).send('Error updating dislike');
+    }
+});
