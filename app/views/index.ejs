@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html lang="id">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Tulis Menfess - Homepage</title>
+
+    <script src="https://cdn.tailwindcss.com"></script>
+
+    <link
+      href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap"
+      rel="stylesheet"
+    />
+
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
+    />
+
+    <style>
+      body {
+        font-family: "Plus Jakarta Sans", sans-serif;
+      }
+      .no-scrollbar::-webkit-scrollbar {
+        display: none;
+      }
+      .no-scrollbar {
+        -ms-overflow-style: none;
+        scrollbar-width: none;
+      }
+    </style>
+  </head>
+
+  <body class="bg-slate-50 min-h-screen text-slate-800">
+    <%- include('partials/navbar') %>
+
+    <div class="max-w-6xl mx-auto px-6 pt-10 pb-6">
+      <h2 class="text-2xl font-bold text-slate-800 flex items-center gap-2">
+        📢 Timeline Terbaru
+      </h2>
+      <p class="text-slate-500 text-sm">Apa kata anak-anak hari ini?</p>
+    </div>
+
+    <main class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 pb-20">
+        <% if (Array.isArray(messages) && messages.length > 0) { %>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <% messages.forEach(msg => { %>
+            <%
+            const limit = 100;
+            const pesan = msg.content || '';
+            const sender = msg.sender || 'Anonim';
+            const color = msg.color || 'bg-white';
+            const likes = msg.likes || 0;
+            const dislikes = msg.dislikes || 0;
+
+            const isLong = pesan.length > limit;
+            const displayContent = isLong
+                ? pesan.substring(0, limit) + '...'
+                : pesan;
+
+            const timeStr = msg.created_at
+                ? new Date(msg.created_at).toLocaleTimeString('id-ID', {
+                    hour: '2-digit',
+                    minute: '2-digit'
+                })
+                : '';
+            %>
+
+            <div
+            class="<%= color %> p-6 rounded-2xl border border-black/5 shadow-sm hover:shadow-lg hover:-translate-y-1 transition duration-300 flex flex-col h-full relative group"
+            >
+            <!-- Card Content -->
+            <div
+                class="flex-grow cursor-pointer"
+                onclick="openModal(
+                `<%= sender %>`,
+                `<%= pesan.replace(/`/g, '\\`').replace(/\n/g, '\\n') %>`,
+                `<%= color %>`,
+                `<%= timeStr %>`,
+                <%= msg.id %>,
+                <%= likes %>,
+                <%= dislikes %>
+                )"
+            >
+                <p class="text-slate-800 text-lg font-medium leading-relaxed whitespace-pre-wrap mb-2">
+                "<%= displayContent %>"
+                </p>
+
+                <% if (isLong) { %>
+                <span class="text-xs font-bold text-slate-500 group-hover:text-indigo-600 transition underline decoration-dotted">
+                    Baca Selengkapnya ↗
+                </span>
+                <% } %>
+            </div>
+
+            <!-- Footer -->
+            <div class="mt-4 pt-4 border-t border-black/5">
+                <div class="flex justify-between items-center text-xs text-slate-500 mb-3">
+                <span class="font-bold text-slate-700 truncate max-w-[120px]">
+                    From: <%= sender %>
+                </span>
+                <span><%= timeStr %></span>
+                </div>
+
+                <div class="flex items-center justify-end gap-2">
+                <form action="/like/<%= msg.id %>" method="POST" onclick="event.stopPropagation()">
+                    <button class="px-3 py-1.5 bg-white/60 rounded-lg border">
+                    👍 <%= likes %>
+                    </button>
+                </form>
+
+                <form action="/dislike/<%= msg.id %>" method="POST" onclick="event.stopPropagation()">
+                    <button class="px-3 py-1.5 bg-white/60 rounded-lg border">
+                    👎 <%= dislikes %>
+                    </button>
+                </form>
+                </div>
+            </div>
+            </div>
+            <% }) %>
+        </div>
+
+        <% } else { %>
+            <div class="text-center py-20 bg-white rounded-3xl border border-dashed border-slate-300 mx-auto max-w-2xl">
+            <div class="text-5xl mb-4">📭</div>
+            <p class="text-slate-500 font-medium">
+                Sepi banget... Yuk jadi yang pertama curhat!
+            </p>
+            </div>
+        <% } %>
+     </main>
+
+
+    <!-- Floating Button -->
+    <a
+      href="/create"
+      class="fixed bottom-8 right-8 bg-indigo-600 text-white p-4 rounded-full shadow-2xl hover:bg-indigo-700 transition transform hover:scale-110 z-40"
+    >
+      ✏️
+    </a>
+
+    <!-- Modal -->
+    <div id="menfessModal" class="fixed inset-0 hidden z-50">
+      <div
+        id="modalBackdrop"
+        class="absolute inset-0 bg-black/60 backdrop-blur-sm"
+        onclick="closeModal()"
+      ></div>
+
+      <div class="relative flex items-center justify-center min-h-screen p-4">
+        <div
+          id="modalCard"
+          class="bg-white p-8 rounded-3xl max-w-lg w-full relative"
+        >
+          <button onclick="closeModal()" class="absolute top-4 right-4">✕</button>
+
+          <div class="text-sm text-slate-500 mb-4">
+            <span id="modalSender"></span> • <span id="modalTime"></span>
+          </div>
+
+          <p id="modalContent" class="text-2xl whitespace-pre-wrap"></p>
+
+          <div class="flex justify-center gap-4 mt-8">
+            <form id="modalLikeForm" method="POST">
+              <button class="px-4 py-2 border rounded">
+                👍 <span id="modalLikes">0</span>
+              </button>
+            </form>
+
+            <form id="modalDislikeForm" method="POST">
+              <button class="px-4 py-2 border rounded">
+                👎 <span id="modalDislikes">0</span>
+              </button>
+            </form>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <%- include('partials/footer') %>
+
+    <script>
+      const modal = document.getElementById("menfessModal");
+      const modalContent = document.getElementById("modalContent");
+      const modalSender = document.getElementById("modalSender");
+      const modalTime = document.getElementById("modalTime");
+      const modalLikes = document.getElementById("modalLikes");
+      const modalDislikes = document.getElementById("modalDislikes");
+      const modalLikeForm = document.getElementById("modalLikeForm");
+      const modalDislikeForm = document.getElementById("modalDislikeForm");
+      const modalCard = document.getElementById("modalCard");
+
+      function openModal(sender, content, color, time, id, likes, dislikes) {
+        modalContent.innerText = content;
+        modalSender.innerText = "From: " + sender;
+        modalTime.innerText = time;
+        modalLikes.innerText = likes;
+        modalDislikes.innerText = dislikes;
+
+        modalLikeForm.action = "/like/" + id;
+        modalDislikeForm.action = "/dislike/" + id;
+
+        modalCard.className = "p-8 rounded-3xl max-w-lg w-full relative " + color;
+
+        modal.classList.remove("hidden");
+      }
+
+      function closeModal() {
+        modal.classList.add("hidden");
+      }
+    </script>
+  </body>
+</html>
